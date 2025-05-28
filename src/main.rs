@@ -1,27 +1,27 @@
-mod api;
-mod db;
-mod models;
-mod schema;
+use anyhow::Context;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use warp::Filter;           // ← necesitas esto para que `use warp::...` compile
+use tokio;                  // ← para #[tokio::main]
+use dotenvy;                // si usas `dotenvy::dotenv()`
 
-use warp::Filter;
-use crate::db::Database;
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../migrations");
 
 #[tokio::main]
-async fn main() {
-    // Configuración inicial
-    dotenv::dotenv().ok();
-    let db = Database::new(&std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"));
+async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv().ok();
+    let database_url = std::env::var("DATABASE_URL")
+        .context("DATABASE_URL must be set")?;
 
-    // Rutas API
-    let api_routes = api::progress_routes(db.clone())
-        .or(api::world_routes(db))
-        .with(warp::cors().allow_any_origin());
+    // Conexión y migraciones
+    let mut conn = diesel::mysql::MysqlConnection::establish(&database_url)
+        .context("Error connecting to database")?;
 
-    // Servir frontend WASM
-    let static_files = warp::path::end()
-        .and(warp::fs::file("./frontend/dist/index.html"));
+    conn.run_pending_migrations(MIGRATIONS)
+        .context("Error running migrations")?;
 
-    warp::serve(api_routes.or(static_files))
-        .run(([0, 0, 0, 0], 3030))
-        .await;
+    // Aquí montarías tus rutas Warp...
+    // let routes = api::progress_routes(...).or(api::world_routes(...));
+    // warp::serve(routes).run(([0,0,0,0], 3030)).await;
+
+    Ok(())
 }
