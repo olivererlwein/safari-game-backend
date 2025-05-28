@@ -1,6 +1,8 @@
-[package]
-name = "backend"
-version = "0.1.0"
-edition = "2024"
-
 [dependencies]
+warp = "0.3"
+tokio = { version = "1.28", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+diesel = { version = "2.2.0", features = ["mysql", "r2d2", "chrono"] }
+dotenvy = "0.15"
+# y cualquiera que tu código use (chrono, confetti no hace falta en el backend, etc.)
