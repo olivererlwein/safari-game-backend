@@ -1,0 +1,9 @@
+# diesel.toml
+[print_schema]
+file = "src/schema.rs"
+
+[migrations_directory]
+dir = "migrations"
+
+[database]
+url = "jdbc:mysql://localhost:3306/rusty"
